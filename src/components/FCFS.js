@@ -1,147 +1,112 @@
-import React, { useState } from "react";
+import React, { useState } from 'react';
 
-function RoundRobin() {
+function FCFS() {
     const [numProcesses, setNumProcesses] = useState(0);
     const [processes, setProcesses] = useState([]);
-    const [timeQuantum, setTimeQuantum] = useState("");
     const [results, setResults] = useState([]);
     const [simulationSequence, setSimulationSequence] = useState([]);
     const [isSimulating, setIsSimulating] = useState(false);
 
-    const handleNumProcessesChange = (e) => {
-        setNumProcesses(parseInt(e.target.value, 10) || 0);
-        setProcesses([]);
-    };
+    const handleProcessChange = (e) => setNumProcesses(e.target.value);
 
     const generateProcessInputs = () => {
         const newProcesses = Array.from({ length: numProcesses }, (_, i) => ({
             id: i + 1,
-            arrival: "",
-            burst: "",
-            remainingBurst: "",
-            completion: 0,
-            turnaround: 0,
-            waiting: 0,
+            arrival: '',  // Set empty string instead of default number
+            burst: '',    // Set empty string instead of default number
         }));
         setProcesses(newProcesses);
     };
 
     const handleInputChange = (index, field, value) => {
-        const updatedProcesses = [...processes];
-        updatedProcesses[index][field] = value === "" ? "" : parseInt(value, 10);
-        if (field === "burst") {
-            updatedProcesses[index].remainingBurst = parseInt(value, 10) || 0;
-        }
-        setProcesses(updatedProcesses);
+        const newProcesses = [...processes];
+        newProcesses[index][field] = value === "" ? "" : parseInt(value);
+        setProcesses(newProcesses);
     };
 
-    const runRoundRobinSimulation = () => {
-        if (!timeQuantum || timeQuantum <= 0) {
-            alert("Please enter a valid time quantum.");
-            return;
-        }
-
-        const processList = processes.map((p) => ({ ...p }));
-        processList.sort((a, b) => a.arrival - b.arrival);
-
+    const simulateFCFS = () => {
+        // Prepare initial values
         let currentTime = 0;
-        let queue = [];
-        let completed = 0;
-        const animation = [];
         const resultsData = [];
+        const sequence = [];
 
-        while (completed < processList.length) {
-            processList.forEach((process, index) => {
-                if (
-                    process.arrival <= currentTime &&
-                    process.remainingBurst > 0 &&
-                    !queue.includes(index)
-                ) {
-                    queue.push(index);
-                }
-            });
+        // Sort processes by arrival time for FCFS
+        const sortedProcesses = [...processes].sort((a, b) => a.arrival - b.arrival);
 
-            if (queue.length > 0) {
-                const currentProcessIndex = queue.shift();
-                const currentProcess = processList[currentProcessIndex];
-                const executionTime = Math.min(timeQuantum, currentProcess.remainingBurst);
-
-                animation.push({
-                    id: currentProcess.id,
-                    start: currentTime,
-                    duration: executionTime,
-                });
-
-                currentTime += executionTime;
-                currentProcess.remainingBurst -= executionTime;
-
-                if (currentProcess.remainingBurst <= 0) {
-                    currentProcess.completion = currentTime;
-                    currentProcess.turnaround =
-                        currentProcess.completion - currentProcess.arrival;
-                    currentProcess.waiting =
-                        currentProcess.turnaround - currentProcess.burst;
-                    completed++;
-                    resultsData.push(currentProcess);
-                }
-            } else {
-                currentTime++;
+        // FCFS scheduling logic
+        sortedProcesses.forEach((process) => {
+            if (currentTime < process.arrival) {
+                currentTime = process.arrival;
             }
-        }
+            process.completion = currentTime + process.burst;
+            process.turnaround = process.completion - process.arrival;
+            process.waiting = process.turnaround - process.burst;
+
+            resultsData.push(process);
+            sequence.push(process); // Add to sequence for simulation
+
+            currentTime += process.burst;
+        });
 
         setResults(resultsData);
-        animateSimulation(animation);
+        animateSimulation(sequence); // Start animation sequence
     };
 
     const animateSimulation = (sequence) => {
-        setSimulationSequence([]); 
+        setSimulationSequence([]); // Clear previous sequence
         setIsSimulating(true);
 
-        sequence.forEach((step, index) => {
+        sequence.forEach((process, index) => {
             setTimeout(() => {
-                setSimulationSequence((prev) => [...prev, step]);
+                setSimulationSequence((prev) => [...prev, process]); // Display each process one by one
                 if (index === sequence.length - 1) {
-                    setIsSimulating(false);
+                    setIsSimulating(false); // End of simulation
                 }
-            }, index * 1000); 
+            }, index * 1000); // 1000ms delay per process, adjust as needed
         });
     };
 
     return (
         <div className="box p-4">
-            <h2>Round Robin Scheduling</h2>
+            <h2>First Come First Serve (FCFS) Simulation</h2>
             <form>
                 <div className="form-group">
                     <label>Number of Processes:</label>
                     <input
                         type="number"
                         className="form-control"
-                        value={numProcesses || ""}
-                        onChange={handleNumProcessesChange}
+                        value={numProcesses}
+                        onChange={handleProcessChange}
                         min="1"
                         required
                     />
                 </div>
                 <button
                     type="button"
-                    className="btn btn-primary mt-2"
+                    className="btn btn-primary"
                     onClick={generateProcessInputs}
                 >
                     Generate Inputs
                 </button>
+                <button
+                    type="button"
+                    className="btn btn-success"
+                    onClick={simulateFCFS}
+                    disabled={isSimulating} // Disable button while simulating
+                >
+                    Simulate
+                </button>
             </form>
 
-            {/* Process Inputs */}
+            {/* Input fields for each process */}
             {processes.map((process, index) => (
-                <div key={index} className="form-group mt-3">
+                <div key={index} className="form-group">
                     <label>Process {process.id} Arrival Time:</label>
                     <input
                         type="number"
                         className="form-control"
-                        value={process.arrival}
-                        onChange={(e) =>
-                            handleInputChange(index, "arrival", e.target.value)
-                        }
+                        value={process.arrival}  // Empty value is possible
+                        onChange={(e) => handleInputChange(index, 'arrival', e.target.value)}
                         min="0"
                         required
                     />
@@ -149,48 +114,20 @@ function RoundRobin() {
                     <input
                         type="number"
                         className="form-control"
-                        value={process.burst}
-                        onChange={(e) =>
-                            handleInputChange(index, "burst", e.target.value)
-                        }
+                        value={process.burst}    // Empty value is possible
+                        onChange={(e) => handleInputChange(index, 'burst', e.target.value)}
                         min="1"
                         required
                     />
                 </div>
             ))}
 
-            {/* Time Quantum Input */}
-            <div className="form-group mt-3">
-                <label>Time Quantum:</label>
-                <input
-                    type="number"
-                    className="form-control"
-                    value={timeQuantum}
-                    onChange={(e) => setTimeQuantum(parseInt(e.target.value, 10) || "")}
-                    min="1"
-                    required
-                />
-            </div>
-            <button
-                type="button"
-                className="btn btn-success mt-3"
-                onClick={runRoundRobinSimulation}
-                disabled={isSimulating}
-            >
-                Simulate
-            </button>
-
-            {/* Simulation Animation */}
             <div className="simulation-box mt-4">
                 <h3>Simulation Animation</h3>
                 <div className="process-container">
-                    {simulationSequence.map((step, index) => (
-                        <button
-                            key={index}
-                            className="btn btn-primary m-1"
-                            style={{ animationDuration: `${step.duration}s` }}
-                        >
-                            P{step.id}
+                    {simulationSequence.map((process) => (
+                        <button key={process.id} className="btn btn-primary m-1">
+                            P{process.id}
                         </button>
                     ))}
                 </div>
@@ -225,4 +162,4 @@ function RoundRobin() {
     );
 }
 
-export {RoundRobin};
+export { FCFS };
