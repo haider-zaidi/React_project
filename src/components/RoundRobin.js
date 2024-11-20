@@ -1,206 +1,203 @@
-import React, { useState } from "react";
+import React, { useState } from 'react';
 
-const RoundRobin = () => {
-  const [numProcesses, setNumProcesses] = useState(0);
-  const [timeQuantum, setTimeQuantum] = useState("");
-  const [processes, setProcesses] = useState([]);
-  const [results, setResults] = useState([]);
-  const [animationSequence, setAnimationSequence] = useState([]);
+function RoundRobin() {
+    const [numProcesses, setNumProcesses] = useState(0);
+    const [timeQuantum, setTimeQuantum] = useState(''); // Set time quantum to an empty string by default
+    const [processes, setProcesses] = useState([]);
+    const [results, setResults] = useState([]);
+    const [simulationSequence, setSimulationSequence] = useState([]);
+    const [isSimulating, setIsSimulating] = useState(false);
 
-  const handleNumProcessesChange = (e) => {
-    setNumProcesses(parseInt(e.target.value, 10) || 0);
-    setProcesses([]);
-  };
+    const handleProcessChange = (e) => setNumProcesses(e.target.value);
 
-  const generateProcessInputs = () => {
-    const newProcesses = Array.from({ length: numProcesses }, (_, index) => ({
-      id: index + 1,
-      arrival: "",
-      burst: "",
-      remainingBurst: "",
-      completion: 0,
-      turnaround: 0,
-      waiting: 0,
-    }));
-    setProcesses(newProcesses);
-  };
+    const generateProcessInputs = () => {
+        const newProcesses = Array.from({ length: numProcesses }, (_, i) => ({
+            id: i + 1,
+            arrival: '',
+            burst: '',
+            remainingBurst: '',
+        }));
+        setProcesses(newProcesses);
+    };
 
-  const handleProcessChange = (index, field, value) => {
-    const updatedProcesses = [...processes];
-    updatedProcesses[index][field] = parseInt(value, 10) || 0;
-    if (field === "burst") {
-      updatedProcesses[index].remainingBurst = parseInt(value, 10) || 0;
-    }
-    setProcesses(updatedProcesses);
-  };
+    const handleInputChange = (index, field, value) => {
+        const newProcesses = [...processes];
+        newProcesses[index][field] = value === "" ? "" : parseInt(value); // Handle empty input
+        newProcesses[index].remainingBurst = value === "" ? "" : parseInt(value); // Initialize remaining burst time
+        setProcesses(newProcesses);
+    };
 
-  const runRoundRobinSimulation = () => {
-    if (!timeQuantum || timeQuantum <= 0) {
-      alert("Please enter a valid time quantum.");
-      return;
-    }
-
-    const processList = processes.map((p) => ({ ...p }));
-    processList.sort((a, b) => a.arrival - b.arrival);
-    let currentTime = 0;
-    let queue = [];
-    let completed = 0;
-    const animation = [];
-    const resultsData = [];
-
-    while (completed < processList.length) {
-      processList.forEach((process, index) => {
-        if (
-          process.arrival <= currentTime &&
-          process.remainingBurst > 0 &&
-          !queue.includes(index)
-        ) {
-          queue.push(index);
+    const simulateRoundRobin = () => {
+        if (timeQuantum === "" || isNaN(timeQuantum) || timeQuantum <= 0) {
+            alert("Please enter a valid time quantum");
+            return;
         }
-      });
 
-      if (queue.length > 0) {
-        const currentProcessIndex = queue.shift();
-        const currentProcess = processList[currentProcessIndex];
-        const executionTime = Math.min(timeQuantum, currentProcess.remainingBurst);
+        let currentTime = 0;
+        const resultsData = [];
+        const sequence = [];
+        const queue = [];
+        const processList = [...processes].map(process => ({ ...process }));
 
-        // Animation sequence
-        animation.push({
-          id: currentProcess.id,
-          start: currentTime,
-          duration: executionTime,
+        processList.forEach(process => process.remainingBurst = process.burst); // Reset remaining burst times
+
+        while (processList.some(p => p.remainingBurst > 0) || queue.length > 0) {
+            processList.forEach(process => {
+                if (process.arrival <= currentTime && process.remainingBurst > 0 && !queue.includes(process)) {
+                    queue.push(process);
+                }
+            });
+
+            if (queue.length > 0) {
+                const process = queue.shift();
+
+                if (process.remainingBurst > timeQuantum) {
+                    currentTime += timeQuantum;
+                    process.remainingBurst -= timeQuantum;
+                    sequence.push({ id: process.id, time: currentTime });
+                } else {
+                    currentTime += process.remainingBurst;
+                    process.remainingBurst = 0;
+                    process.completion = currentTime;
+                    process.turnaround = process.completion - process.arrival;
+                    process.waiting = process.turnaround - process.burst;
+                    resultsData.push(process);
+                    sequence.push({ id: process.id, time: currentTime });
+                }
+
+                if (process.remainingBurst > 0) {
+                    queue.push(process);
+                }
+            } else {
+                currentTime += 1;
+            }
+        }
+
+        setResults(resultsData);
+        animateSimulation(sequence);
+    };
+
+    const animateSimulation = (sequence) => {
+        setSimulationSequence([]);
+        setIsSimulating(true);
+
+        sequence.forEach((event, index) => {
+            setTimeout(() => {
+                setSimulationSequence((prev) => [...prev, event]);
+                if (index === sequence.length - 1) {
+                    setIsSimulating(false);
+                }
+            }, index * 500);
         });
+    };
 
-        currentTime += executionTime;
-        currentProcess.remainingBurst -= executionTime;
+    return (
+        <div className="box p-4">
+            <h2>Round Robin (RR) Simulation</h2>
+            <form>
+                <div className="form-group">
+                    <label>Number of Processes:</label>
+                    <input
+                        type="number"
+                        className="form-control"
+                        value={numProcesses}
+                        onChange={handleProcessChange}
+                        min="1"
+                        required
+                    />
+                </div>
+                <div className="form-group">
+                    <label>Time Quantum:</label>
+                    <input
+                        type="number"
+                        className="form-control"
+                        value={timeQuantum}  // Empty value allowed
+                        onChange={(e) => setTimeQuantum(e.target.value)}
+                        min="1"
+                    />
+                </div>
+                <button
+                    type="button"
+                    className="btn btn-primary"
+                    onClick={generateProcessInputs}
+                >
+                    Generate Inputs
+                </button>
+                <button
+                    type="button"
+                    className="btn btn-success"
+                    onClick={simulateRoundRobin}
+                    disabled={isSimulating}
+                >
+                    Simulate
+                </button>
+            </form>
 
-        if (currentProcess.remainingBurst <= 0) {
-          currentProcess.completion = currentTime;
-          currentProcess.turnaround =
-            currentProcess.completion - currentProcess.arrival;
-          currentProcess.waiting =
-            currentProcess.turnaround - currentProcess.burst;
-          completed++;
-          resultsData.push(currentProcess);
-        }
-      } else {
-        currentTime++;
-      }
-    }
+            {processes.length > 0 && (
+                <div>
+                    {processes.map((process, index) => (
+                        <div key={index} className="form-group mt-3">
+                            <label>Process {process.id} Arrival Time:</label>
+                            <input
+                                type="number"
+                                className="form-control"
+                                value={process.arrival}
+                                onChange={(e) => handleInputChange(index, 'arrival', e.target.value)}
+                                min="0"
+                                required
+                            />
+                            <label>Process {process.id} Burst Time:</label>
+                            <input
+                                type="number"
+                                className="form-control"
+                                value={process.burst}
+                                onChange={(e) => handleInputChange(index, 'burst', e.target.value)}
+                                min="1"
+                                required
+                            />
+                        </div>
+                    ))}
+                </div>
+            )}
 
-    setAnimationSequence(animation);
-    setResults(resultsData);
-  };
-
-  return (
-    <div className="container">
-      <h1>Round Robin Scheduling</h1>
-
-      {/* Input for Number of Processes */}
-      <div className="form-group">
-        <label htmlFor="numProcesses">Number of Processes:</label>
-        <input
-          type="number"
-          id="numProcesses"
-          className="form-control"
-          value={numProcesses || ""}
-          onChange={handleNumProcessesChange}
-        />
-        <button className="btn btn-primary mt-2" onClick={generateProcessInputs}>
-          Generate Inputs
-        </button>
-      </div>
-
-      {/* Process Input Fields */}
-      {processes.map((process, index) => (
-        <div key={index} className="form-group">
-          <label>Process {process.id} Arrival Time:</label>
-          <input
-            type="number"
-            className="form-control"
-            value={process.arrival}
-            onChange={(e) =>
-              handleProcessChange(index, "arrival", e.target.value)
-            }
-          />
-          <label>Process {process.id} Burst Time:</label>
-          <input
-            type="number"
-            className="form-control"
-            value={process.burst}
-            onChange={(e) =>
-              handleProcessChange(index, "burst", e.target.value)
-            }
-          />
-        </div>
-      ))}
-
-      {/* Time Quantum Input */}
-      <div className="form-group">
-        <label htmlFor="timeQuantum">Time Quantum:</label>
-        <input
-          type="number"
-          id="timeQuantum"
-          className="form-control"
-          value={timeQuantum}
-          onChange={(e) => setTimeQuantum(parseInt(e.target.value, 10) || "")}
-        />
-      </div>
-
-      {/* Run Simulation Button */}
-      <button className="btn btn-success mt-3" onClick={runRoundRobinSimulation}>
-        Run Simulation
-      </button>
-
-      {/* Animation Section */}
-      <div id="roundRobinAnimation" className="mt-4">
-        <h3>Execution Animation</h3>
-        <div className="d-flex">
-          {animationSequence.map((step, index) => (
-            <div
-              key={index}
-              className="process bg-primary text-white p-2 mx-1"
-              style={{
-                width: `${step.duration * 20}px`,
-                transition: "background-color 1s",
-              }}
-            >
-              P{step.id}
+            <div className="simulation-box mt-4">
+                <h3>Simulation Output</h3>
+                <div className="process-container">
+                    {simulationSequence.map((event, index) => (
+                        <button key={index} className="btn btn-primary mr-2 mb-2">
+                            P{event.id} (t={event.time})
+                        </button>
+                    ))}
+                </div>
             </div>
-          ))}
+
+            <table className="table table-bordered mt-4">
+                <thead>
+                    <tr>
+                        <th>Process</th>
+                        <th>Arrival Time</th>
+                        <th>Burst Time</th>
+                        <th>Completion Time</th>
+                        <th>Turnaround Time</th>
+                        <th>Waiting Time</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {results.map((result) => (
+                        <tr key={result.id}>
+                            <td>{result.id}</td>
+                            <td>{result.arrival}</td>
+                            <td>{result.burst}</td>
+                            <td>{result.completion}</td>
+                            <td>{result.turnaround}</td>
+                            <td>{result.waiting}</td>
+                        </tr>
+                    ))}
+                </tbody>
+            </table>
         </div>
-      </div>
+    );
+}
 
-      {/* Results Table */}
-      <div className="mt-4">
-        <h3>Results</h3>
-        <table className="table table-bordered">
-          <thead>
-            <tr>
-              <th>Process</th>
-              <th>Arrival Time</th>
-              <th>Burst Time</th>
-              <th>Completion Time</th>
-              <th>Turnaround Time</th>
-              <th>Waiting Time</th>
-            </tr>
-          </thead>
-          <tbody>
-            {results.map((process) => (
-              <tr key={process.id}>
-                <td>P{process.id}</td>
-                <td>{process.arrival}</td>
-                <td>{process.burst}</td>
-                <td>{process.completion}</td>
-                <td>{process.turnaround}</td>
-                <td>{process.waiting}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-    </div>
-  );
-};
+export { RoundRobin };
 
-export {RoundRobin};
