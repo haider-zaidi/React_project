@@ -1,30 +1,79 @@
-* OS Algorithm Simulation
+# OS-Scheduling Simulator
 
-.) Project Overview
+An interactive, web-based simulation tool for visualizing and understanding various CPU scheduling algorithms used in operating systems. Built using React and Tailwind CSS, and now fully containerized using Docker for easy deployment and scalability.
 
-The OS Algorithm Simulation project is designed to provide a visual and interactive representation of various operating system algorithms. The main objective is to help students and professionals understand the inner workings of these algorithms through a user-friendly interface.
+## 🚀 Features
 
-* Features
+### Scheduling Algorithms Supported
+- **First Come First Serve (FCFS)**
+- **Shortest Job First (SJF)**
+  - Preemptive and Non-Preemptive
+- **Round Robin**
+  - User-defined Time Quantum
+- Optional: Extendable for Multilevel Queue or Feedback Scheduling
 
-1. CPU Scheduling Algorithms: Implements FCFS, SJF, Round Robin, and SRTF.
-2. Memory Management Algorithms: Includes Paging and Segmentation.
-3. Graphical Visualization: Provides animated representations of algorithm execution.
-4. User Input Support: Allows users to enter custom data sets for simulation.
-5. Real-time Logs: Displays step-by-step execution logs for better understanding.
+### Process Input & Control
+- Add processes with:
+  - Process ID
+  - Arrival Time
+  - Burst Time
+  - Priority (if applicable)
+- Set Time Quantum for Round Robin
+- Clear and Reset buttons for user-friendly experience
 
-* Technologies Used:
+### Output & Visualization
+- Table showing:
+  - Completion Time
+  - Turnaround Time
+  - Waiting Time
+- Average Turnaround and Waiting Time
+- Real-time visual updates after simulation
 
-.) Frontend: React.js
-.) Programming Language: JavaScript
+## 🛠️ Tech Stack
 
-* Usage Instructions
+### Frontend
+- React 19
+- Tailwind CSS
+- React Hooks for State Management
+- React Icons
 
-1. Select an algorithm from the menu.
-2. Enter the necessary parameters (e.g., process IDs, burst times, priorities).
-3. Click "Simulate" to visualize the execution.
-4. View execution logs and step-by-step results.
-5. Modify parameters and re-run simulations to compare results.
+### DevOps & Tooling
+- Vite for fast development
+- ESLint + Prettier for linting and formatting
+- Docker for containerization
 
-*Author:
+## 📦 Docker & Containerization
 
-Haider Zaidi
+This project is fully containerized using **Docker**, making it easy to build, run, and deploy anywhere.
+
+### 🐳 How to Run with Docker
+
+1. **Build Docker Image**
+   ```bash
+   docker build -t os-scheduler-sim .
+   ```
+
+2. **Run the Docker Container**
+    ```bash
+   docker run -p 3000:3000 os-scheduler-sim
+   ```
+
+### 🤝 Contributions
+- Pull requests are welcome! Feel free to contribute with:
+    - New scheduling algorithms
+    - Better visualizations
+    - UI/UX improvements
+    - Performance optimizations
+
+
+## 👏 Acknowledgments
+- Tailwind CSS
+- React
+
+## Hosted Website Link
+- OS-Scheduling Simulator - [Link](https://os-scheduling-algorithm-simulation.vercel.app/)
+
+## 📞 Contact
+Your Name - haiderzaidi45h@gmail.com
+
+Project Link - [GitHub Repository](https://github.com/haider-zaidi/React_project)
